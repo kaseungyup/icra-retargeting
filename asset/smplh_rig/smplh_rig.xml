@@ -224,12 +224,12 @@
                                                 </body>
                                             </body>
 
-                                            <body name="left_thumb1" pos="0.028838 0.042275 -0.023086" euler="0 0 -0.598647">
-                                                <geom name="lthumb1-lthumb2" type="capsule" fromto="0 0 0 0.011083 0.029818 0.003174"  size="0.006" />
+                                            <body name="left_thumb1" pos="0.028838 0.042275 -0.023086" euler="0 0 0">
+                                                <geom name="lthumb1-lthumb2" type="capsule" fromto="0 0 0 0.025959 0.018387 0.003174"  size="0.006" />
                                                 <joint name="l_thumbr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                                <joint name="l_thumba" type="hinge" pos="0 0 0" axis="0 1 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                <joint name="l_thumba" type="hinge" pos="0 0 0" axis="0 1 0" range="0 3.141592" damping="5" stiffness="0" armature="0.02" />
                                                                                                         
-                                                <body name="left_thumb2" pos="0.011083 0.029818 0.003174" euler="0 0 -0.355868">
+                                                <body name="left_thumb2" pos="0.025959 0.018387 0.003174" euler="0 0 -0.954515">
                                                     <geom name="lthumb2-lthumb3" type="capsule" fromto="0 0 0 -0.009025 0.025780 -0.002574"  size="0.006" />
                                                     <joint name="l_thumb2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
                                                                                                     
@@ -446,6 +446,10 @@
         <motor name="l_ring1"       gear="20" joint="l_ring1" />
         <motor name="l_ring2"       gear="20" joint="l_ring2" />
         <motor name="l_ring3"       gear="20" joint="l_ring3" />
+        <motor name="l_thumbr"       gear="20" joint="l_thumbr" />
+        <motor name="l_thumba"       gear="20" joint="l_thumba" />
+        <motor name="l_thumb2"       gear="20" joint="l_thumb2" />
+        <motor name="l_thumb3"       gear="20" joint="l_thumb3" />
         
         <motor name="r_collar"       gear="20" joint="r_collar" />
         <motor name="r_shoulder1"       gear="20" joint="r_shoulder1" />
