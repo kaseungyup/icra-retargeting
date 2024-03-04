@@ -149,77 +149,89 @@
                                         <joint name="l_elbow" type="hinge" pos="0 0 0" axis="0 0 1" range="-2.61666666667 -0.01" armature="0.0028" class="elbow" />
                                         <site name="tracking[lhand]" class="tracking_site" pos="-0.007375 0.265709 0.012698" />
                                         <body name="left_wrist" pos="-0.007375 0.265709 0.012698" euler="0 0 0">
-                                            <geom name="lwrist2lindex1" type="capsule" fromto="0 0 0 0.022139 0.105872 -0.011025"  size="0.006" />
-                                            <geom name="lwrist2lmiddle1" type="capsule" fromto="0 0 0 -0.002027 0.113820 -0.007885"  size="0.006" />
-                                            <geom name="lwrist2lpinky1" type="capsule" fromto="0 0 0 -0.044382 0.087803 -0.014833"  size="0.006" />
-                                            <geom name="lwrist2lring1" type="capsule" fromto="0 0 0 -0.026588 0.101537 -0.009983"  size="0.006" />
+                                            <geom name="lwrist2lindex0" type="capsule" fromto="0 0 0 0.011069 0.052936 -0.005513"  size="0.006" />
+                                            <geom name="lwrist2lmiddle0" type="capsule" fromto="0 0 0 -0.001014 0.056910 -0.003942"  size="0.006" />
+                                            <geom name="lwrist2lpinky0" type="capsule" fromto="0 0 0 -0.022191 0.043901 -0.007416"  size="0.006" />
+                                            <geom name="lwrist2lring0" type="capsule" fromto="0 0 0 -0.013294 0.050768 -0.004992"  size="0.006" />
                                             <geom name="lwrist2lthumb1" type="capsule" fromto="0 0 0 0.028838 0.042275 -0.023086"  size="0.006" />
                                             
                                             <joint name="l_wrist1" type="hinge" pos="0 0 0" axis="0 1 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
                                             <joint name="l_wrist2" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
                                             <joint name="l_wrist3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                        
-                                            <body name="left_index1" pos="0.022139 0.105872 -0.011025" euler="0 0 -0.206141">
-                                                <geom name="lindex1-lindex2" type="capsule" fromto="0 0 0 -0.003033 0.033130 0.001728"  size="0.006" />
-                                                <joint name="l_indexr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                                <joint name="l_index1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                        
-                                                <body name="left_index2" pos="-0.003033 0.033130 0.001728" euler="0 0 0.091304">
-                                                    <geom name="lindex2-lindex3" type="capsule" fromto="0 0 0 -0.001843 0.023182 -0.002789"  size="0.006" />
-                                                    <joint name="l_index2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                
-                                                    <body name="left_index3" pos="-0.001843 0.023182 -0.002789" euler="0 0 0.079354">
-                                                        <!-- temporary geom value for finger tip -->
-                                                        <geom name="lindex3-lindextip" type="capsule" fromto="0 0 0 -0.0015 0.02 -0.0025"  size="0.006" />
-                                                        <joint name="l_index3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        <body name="left_index4" pos="-0.0015 0.02 -0.0025" euler="0 0 0"/>
+
+                                            <body name="left_index0" pos="0.011069 0.052936 -0.005513" euler="0 0 0">
+                                                <geom name="lindex0-lindex1" type="capsule" fromto="0 0 0 0.011069 0.052936 -0.005513"  size="0.006" />
+                                                <body name="left_index1" pos="0.011069 0.052936 -0.005513" euler="0 0 -0.206141">
+                                                    <geom name="lindex1-lindex2" type="capsule" fromto="0 0 0 -0.003033 0.033130 0.001728"  size="0.006" />
+                                                    <joint name="l_indexr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
+                                                    <joint name="l_index1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                            
+                                                    <body name="left_index2" pos="-0.003033 0.033130 0.001728" euler="0 0 0.091304">
+                                                        <geom name="lindex2-lindex3" type="capsule" fromto="0 0 0 -0.001843 0.023182 -0.002789"  size="0.006" />
+                                                        <joint name="l_index2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                    
+                                                        <body name="left_index3" pos="-0.001843 0.023182 -0.002789" euler="0 0 0.079354">
+                                                            <!-- temporary geom value for finger tip -->
+                                                            <geom name="lindex3-lindextip" type="capsule" fromto="0 0 0 -0.0015 0.02 -0.0025"  size="0.006" />
+                                                            <joint name="l_index3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            <body name="left_index4" pos="-0.0015 0.02 -0.0025" euler="0 0 0"/>
+                                                        </body>
                                                     </body>
                                                 </body>
                                             </body>
-                                            <body name="left_middle1" pos="-0.002027 0.113820 -0.007885" euler="0 0 0.017807">
-                                                <geom name="lmiddle1-lmiddle2" type="capsule" fromto="0 0 0 -0.003115 0.031998 0.000394"  size="0.006" />
-                                                <joint name="l_middle1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                        
-                                                <body name="left_middle2" pos="-0.003115 0.031998 0.000394" euler="0 0 0.097038">
-                                                    <geom name="lmiddle2-lmiddle3" type="capsule" fromto="0 0 0 -0.000460 0.024696 -0.002376"  size="0.006" />
-                                                    <joint name="l_middle2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                        
-                                                    <body name="left_middle3" pos="-0.000460 0.024696 -0.002376" euler="0 0 0.018625">
-                                                        <geom name="lmiddl3-lmiddletip" type="capsule" fromto="0 0 0 -0.00045 0.024 -0.0023"  size="0.006" />
-                                                        <joint name="l_middle3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        <body name="left_middle4" pos="-0.00045 0.024 -0.0023" euler="0 0 0"/>
+                                            <body name="left_middle0" pos="-0.001014 0.056910 -0.003942" euler="0 0 0">
+                                                <geom name="lmiddle0-lmiddle1" type="capsule" fromto="0 0 0 -0.001014 0.056910 -0.003942"  size="0.006" />
+                                                <body name="left_middle1" pos="-0.001014 0.056910 -0.003942" euler="0 0 0.017807">
+                                                    <geom name="lmiddle1-lmiddle2" type="capsule" fromto="0 0 0 -0.003115 0.031998 0.000394"  size="0.006" />
+                                                    <joint name="l_middle1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                            
+                                                    <body name="left_middle2" pos="-0.003115 0.031998 0.000394" euler="0 0 0.097038">
+                                                        <geom name="lmiddle2-lmiddle3" type="capsule" fromto="0 0 0 -0.000460 0.024696 -0.002376"  size="0.006" />
+                                                        <joint name="l_middle2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                            
+                                                        <body name="left_middle3" pos="-0.000460 0.024696 -0.002376" euler="0 0 0.018625">
+                                                            <geom name="lmiddl3-lmiddletip" type="capsule" fromto="0 0 0 -0.00045 0.024 -0.0023"  size="0.006" />
+                                                            <joint name="l_middle3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            <body name="left_middle4" pos="-0.00045 0.024 -0.0023" euler="0 0 0"/>
+                                                        </body>
                                                     </body>
                                                 </body>
                                             </body>
-                                            <body name="left_pinky1" pos="-0.044382 0.087803 -0.014833" euler="0 0 0.468016">
-                                                <geom name="lpinky1-lpinky2" type="capsule" fromto="0 0 0 -0.002127 0.020411 -0.000227"  size="0.006" />
-                                                <joint name="l_pinkyr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                                <joint name="l_pinky1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                                                        
-                                                <body name="left_pinky2" pos="-0.002127 0.020411 -0.000227" euler="0 0 0.103822">
-                                                    <geom name="lpinky2-lpinky3" type="capsule" fromto="0 0 0 0.000708 0.019815 -0.001496"  size="0.006" />
-                                                    <joint name="l_pinky2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        
-                                                    <body name="left_pinky3" pos="0.000708 0.019815 -0.001496" euler="0 0 -0.035726">
-                                                        <geom name="lpinky3-lpinkytip" type="capsule" fromto="0 0 0 -0.0007 0.02 -0.0015"  size="0.006" />
-                                                        <joint name="l_pinky3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        <body name="left_pinky4" pos="-0.0007 0.02 -0.0015" euler="0 0 0"/>
+                                            <body name="left_pinky0" pos="-0.022191 0.043901 -0.007416" euler="0 0 0">
+                                                <geom name="lpinky0-lpinky1" type="capsule" fromto="0 0 0 -0.022191 0.043901 -0.007416"  size="0.006" />
+                                                <body name="left_pinky1" pos="-0.022191 0.043901 -0.007416" euler="0 0 0.468016">
+                                                    <geom name="lpinky1-lpinky2" type="capsule" fromto="0 0 0 -0.002127 0.020411 -0.000227"  size="0.006" />
+                                                    <joint name="l_pinkyr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
+                                                    <joint name="l_pinky1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                                                            
+                                                    <body name="left_pinky2" pos="-0.002127 0.020411 -0.000227" euler="0 0 0.103822">
+                                                        <geom name="lpinky2-lpinky3" type="capsule" fromto="0 0 0 0.000708 0.019815 -0.001496"  size="0.006" />
+                                                        <joint name="l_pinky2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            
+                                                        <body name="left_pinky3" pos="0.000708 0.019815 -0.001496" euler="0 0 -0.035726">
+                                                            <geom name="lpinky3-lpinkytip" type="capsule" fromto="0 0 0 -0.0007 0.02 -0.0015"  size="0.006" />
+                                                            <joint name="l_pinky3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            <body name="left_pinky4" pos="-0.0007 0.02 -0.0015" euler="0 0 0"/>
+                                                        </body>
                                                     </body>
                                                 </body>
                                             </body>
-                                            <body name="left_ring1" pos="-0.026588 0.101537 -0.009983" euler="0 0 0.256105">
-                                                <geom name="lring1-lring2" type="capsule" fromto="0 0 0 0.003936 0.029493 0.001011"  size="0.006" />
-                                                <joint name="l_ringr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                                <joint name="l_ring1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        
-                                                <body name="left_ring2" pos="0.003936 0.029493 0.001011" euler="0 0 -0.132684">
-                                                    <geom name="lring2-lring3" type="capsule" fromto="0 0 0 -0.003050 0.024423 -0.002075"  size="0.006" />
-                                                    <joint name="l_ring2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        
-                                                    <body name="left_ring3" pos="-0.003050 0.024423 -0.002075" euler="0 0 0.124218">
-                                                        <geom name="lring3-lringtip" type="capsule" fromto="0 0 0 -0.003 0.024 -0.002"  size="0.006" />
-                                                        <joint name="l_ring3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
-                                                        <body name="left_ring4" pos="-0.003 0.024 -0.002" euler="0 0 0"/>
+                                            <body name="left_ring0" pos="-0.013294 0.050768 -0.004992" euler="0 0 0">
+                                                <geom name="lring0-lring1" type="capsule" fromto="0 0 0 -0.013294 0.050768 -0.004992"  size="0.006" />
+                                                <body name="left_ring1" pos="-0.013294 0.050768 -0.004992" euler="0 0 0.256105">
+                                                    <geom name="lring1-lring2" type="capsule" fromto="0 0 0 0.003936 0.029493 0.001011"  size="0.006" />
+                                                    <joint name="l_ringr" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
+                                                    <joint name="l_ring1" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            
+                                                    <body name="left_ring2" pos="0.003936 0.029493 0.001011" euler="0 0 -0.132684">
+                                                        <geom name="lring2-lring3" type="capsule" fromto="0 0 0 -0.003050 0.024423 -0.002075"  size="0.006" />
+                                                        <joint name="l_ring2" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            
+                                                        <body name="left_ring3" pos="-0.003050 0.024423 -0.002075" euler="0 0 0.124218">
+                                                            <geom name="lring3-lringtip" type="capsule" fromto="0 0 0 -0.003 0.024 -0.002"  size="0.006" />
+                                                            <joint name="l_ring3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 0" damping="5" stiffness="0" armature="0.02" />
+                                                            <body name="left_ring4" pos="-0.003 0.024 -0.002" euler="0 0 0"/>
+                                                        </body>
                                                     </body>
                                                 </body>
                                             </body>
