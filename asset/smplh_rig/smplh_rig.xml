@@ -476,23 +476,23 @@
 
         <motor name="l_indexr"       gear="20" joint="l_indexr" />
         <motor name="l_index1"       gear="20" joint="l_index1" />
-        <motor name="l_index2"       gear="20" joint="l_index2" />
-        <motor name="l_index3"       gear="20" joint="l_index3" />
+        <!-- <motor name="l_index2"       gear="20" joint="l_index2" />
+        <motor name="l_index3"       gear="20" joint="l_index3" /> -->
         <motor name="l_middle1"       gear="20" joint="l_middle1" />
-        <motor name="l_middle2"       gear="20" joint="l_middle2" />
-        <motor name="l_middle3"       gear="20" joint="l_middle3" />
+        <!-- <motor name="l_middle2"       gear="20" joint="l_middle2" />
+        <motor name="l_middle3"       gear="20" joint="l_middle3" /> -->
         <motor name="l_pinkyr"       gear="20" joint="l_pinkyr" />
         <motor name="l_pinky1"       gear="20" joint="l_pinky1" />
-        <motor name="l_pinky2"       gear="20" joint="l_pinky2" />
+        <!-- <motor name="l_pinky2"       gear="20" joint="l_pinky2" />
         <motor name="l_pinky3"       gear="20" joint="l_pinky3" />
-        <motor name="l_ringr"       gear="20" joint="l_ringr" />
+        <motor name="l_ringr"       gear="20" joint="l_ringr" /> -->
         <motor name="l_ring1"       gear="20" joint="l_ring1" />
-        <motor name="l_ring2"       gear="20" joint="l_ring2" />
-        <motor name="l_ring3"       gear="20" joint="l_ring3" />
+        <!-- <motor name="l_ring2"       gear="20" joint="l_ring2" />
+        <motor name="l_ring3"       gear="20" joint="l_ring3" /> -->
         <motor name="l_thumbr"       gear="20" joint="l_thumbr" />
         <motor name="l_thumba"       gear="20" joint="l_thumba" />
         <motor name="l_thumb2"       gear="20" joint="l_thumb2" />
-        <motor name="l_thumb3"       gear="20" joint="l_thumb3" />
+        <!-- <motor name="l_thumb3"       gear="20" joint="l_thumb3" /> -->
         
         <motor name="r_collar"       gear="20" joint="r_collar" />
         <motor name="r_shoulder1"       gear="20" joint="r_shoulder1" />
@@ -505,23 +505,23 @@
         
         <motor name="r_indexr"       gear="20" joint="r_indexr" />
         <motor name="r_index1"       gear="20" joint="r_index1" />
-        <motor name="r_index2"       gear="20" joint="r_index2" />
-        <motor name="r_index3"       gear="20" joint="r_index3" />
+        <!-- <motor name="r_index2"       gear="20" joint="r_index2" />
+        <motor name="r_index3"       gear="20" joint="r_index3" /> -->
         <motor name="r_middle1"       gear="20" joint="r_middle1" />
-        <motor name="r_middle2"       gear="20" joint="r_middle2" />
-        <motor name="r_middle3"       gear="20" joint="r_middle3" />
+        <!-- <motor name="r_middle2"       gear="20" joint="r_middle2" />
+        <motor name="r_middle3"       gear="20" joint="r_middle3" /> -->
         <motor name="r_pinkyr"       gear="20" joint="r_pinkyr" />
         <motor name="r_pinky1"       gear="20" joint="r_pinky1" />
-        <motor name="r_pinky2"       gear="20" joint="r_pinky2" />
+        <!-- <motor name="r_pinky2"       gear="20" joint="r_pinky2" />
         <motor name="r_pinky3"       gear="20" joint="r_pinky3" />
-        <motor name="r_ringr"       gear="20" joint="r_ringr" />
+        <motor name="r_ringr"       gear="20" joint="r_ringr" /> -->
         <motor name="r_ring1"       gear="20" joint="r_ring1" />
-        <motor name="r_ring2"       gear="20" joint="r_ring2" />
-        <motor name="r_ring3"       gear="20" joint="r_ring3" />
+        <!-- <motor name="r_ring2"       gear="20" joint="r_ring2" />
+        <motor name="r_ring3"       gear="20" joint="r_ring3" /> -->
         <motor name="r_thumbr"       gear="20" joint="r_thumbr" />
         <motor name="r_thumba"       gear="20" joint="r_thumba" />
-        <motor name="r_thumb2"       gear="20" joint="r_thumb2" />
-        <motor name="r_thumb3"       gear="20" joint="r_thumb3" />
+        <!-- <motor name="r_thumb2"       gear="20" joint="r_thumb2" />
+        <motor name="r_thumb3"       gear="20" joint="r_thumb3" /> -->
 
         <motor name="l_pelvis1"       gear="40" joint="l_pelvis1" />
         <motor name="l_pelvis2"       gear="40" joint="l_pelvis2" />
