@@ -1110,3 +1110,19 @@ class MuJoCoParserClass(object):
         jntadr  = self.model.body(root_name).jntadr[0]
         qposadr = self.model.jnt_qposadr[jntadr]
         self.data.qpos[qposadr+3:qposadr+7] = r2quat(R)
+
+    def get_q_couple(self,q_raw,coupled_joint_idxs_list,coupled_joint_weights_list):
+        """ 
+            Coupled joint positions
+        """
+        q_couple = q_raw.copy()
+        for i in range(len(coupled_joint_idxs_list)):
+            coupled_joint_idx = coupled_joint_idxs_list[i]
+            coupled_joint_weights = coupled_joint_weights_list[i]
+            joint_sum = 0
+            for j in range(len(coupled_joint_idx)):
+                joint_sum += q_raw[coupled_joint_idx[j]]
+            joint_sum /= np.sum(coupled_joint_weights)
+            for k in range(len(coupled_joint_idx)):
+                q_couple[coupled_joint_idx[k]] = joint_sum*coupled_joint_weights[k]
+        return q_couple
