@@ -164,3 +164,4 @@ video
 smplh_models
 *MUJOCO_LOG.TXT
 *DS_Store
+asset/kimlab_dualarms
