@@ -6,6 +6,8 @@ import shapely as sp # handle polygon
 from shapely import Polygon,LineString,Point # handle polygons
 from scipy.spatial.distance import cdist
 
+import cvxpy as cp
+
 def rot_mtx(deg):
     """
         2 x 2 rotation matrix
@@ -68,6 +70,20 @@ def rpy2r(rpy_rad):
     ])
     assert R.shape == (3, 3)
     return R
+
+def rpy2r_order(r0, order=[0,1,2]):
+    """ 
+        roll,pitch,yaw in radian to R with ordering
+    """
+    c1 = np.math.cos(r0[0]); c2 = np.math.cos(r0[1]); c3 = np.math.cos(r0[2])
+    s1 = np.math.sin(r0[0]); s2 = np.math.sin(r0[1]); s3 = np.math.sin(r0[2])
+    a1 = np.array([[1,0,0],[0,c1,-s1],[0,s1,c1]])
+    a2 = np.array([[c2,0,s2],[0,1,0],[-s2,0,c2]])
+    a3 = np.array([[c3,-s3,0],[s3,c3,0],[0,0,1]])
+    a_list = [a1,a2,a3]
+    a = np.matmul(np.matmul(a_list[order[0]],a_list[order[1]]),a_list[order[2]])
+    assert a.shape == (3,3)
+    return a
 
 def r2rpy(R,unit='rad'):
     """
@@ -168,7 +184,11 @@ def np_uv(vec):
         Get unit vector
     """
     x = np.array(vec)
-    return x/np.linalg.norm(x)
+    len = np.linalg.norm(x+1e-8)
+    if len <= 1e-6:
+        return np.array([0,0,1])
+    else:
+        return x/len
 
 def get_rotation_matrix_from_two_points(p_fr,p_to):
     p_a  = np.copy(np.array([0,0,1]))
@@ -489,6 +509,9 @@ class MultiSliderClass(object):
         
         # Update the canvas scroll region when the sliders_frame changes size
         self.sliders_frame.bind("<Configure>",self.cb_scroll)
+
+        # You may want to do this in the main script
+        for _ in range(100): self.update() # to avoid GIL-related error 
         
     def cb_scroll(self,event):    
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -553,62 +576,316 @@ class MultiSliderClass(object):
     def get_slider_values(self):
         return self.slider_values
     
+    def set_slider_values(self,slider_values):
+        self.slider_values = slider_values
+        for slider,slider_value in zip(self.sliders,self.slider_values):
+            slider.set(slider_value)
+    
     def close(self):
         if self.is_window_exists():
+            # some loop
+            for _ in range(100): self.update() # to avoid GIL-related error 
+            # Close 
             self.gui.destroy()
             self.gui.quit()
             self.gui.update()
         
-
-### extra functions
-
-def rpy2R(r0, order=[0,1,2]):
-    c1 = np.math.cos(r0[0]); c2 = np.math.cos(r0[1]); c3 = np.math.cos(r0[2])
-    s1 = np.math.sin(r0[0]); s2 = np.math.sin(r0[1]); s3 = np.math.sin(r0[2])
-
-    a1 = np.array([[1,0,0],[0,c1,-s1],[0,s1,c1]])
-    a2 = np.array([[c2,0,s2],[0,1,0],[-s2,0,c2]])
-    a3 = np.array([[c3,-s3,0],[s3,c3,0],[0,0,1]])
-
-    a_list = [a1,a2,a3]
-    a = np.matmul(np.matmul(a_list[order[0]],a_list[order[1]]),a_list[order[2]])
-
-    assert a.shape == (3,3)
-    return a
-
-def rotation(v1, v2):
-    """
-    Compute a matrix R that rotates v1 to align with v2.
-    v1 and v2 must be length-3 1d numpy arrays.
-    """
-    # unit vectors
-    u = v1 / np.linalg.norm(v1)
-    Ru = v2 / np.linalg.norm(v2)
-    # dimension of the space and identity
-    dim = u.size
-    I = np.identity(dim)
-    # the cos angle between the vectors
-    c = np.dot(u, Ru)
-    # a small number
-    eps = 1.0e-10
-    if np.abs(c - 1.0) < eps:
-        # same direction
-        return I
-    elif np.abs(c + 1.0) < eps:
-        # opposite direction
-        return -I
-    else:
-        # the cross product matrix of a vector to rotate around
-        K = np.outer(Ru, u) - np.outer(u, Ru)
-        # Rodrigues' formula
-        return I + K + (K @ K) / (1 + c)
-    
-def get_idxs(list_query,list_domain):
-    return [list_query.index(item) for item in list_domain if item in list_query]
-
 def get_colors(cmap_name='gist_rainbow',n_color=10,alpha=1.0):
     colors = [plt.get_cmap(cmap_name)(idx) for idx in np.linspace(0,1,n_color)]
     for idx in range(n_color):
         color = colors[idx]
         colors[idx] = color
     return colors
+
+def uv_T_joi(T_joi,joi_fr,joi_to):
+    """ 
+        Get unit vector between to JOI poses
+    """
+    return np_uv(t2p(T_joi[joi_to])-t2p(T_joi[joi_fr]))
+
+def len_T_joi(T_joi,joi_fr,joi_to):
+    """ 
+        Get length between two JOI poses
+    """
+    return np.linalg.norm(t2p(T_joi[joi_to]) - t2p(T_joi[joi_fr]))
+
+def get_idxs(list_query,list_domain):
+    return [list_query.index(item) for item in list_domain if item in list_query]
+
+def finite_difference_matrix(n, dt, order):
+    """
+    n: number of points
+    dt: time interval
+    order: (1=velocity, 2=acceleration, 3=jerk)
+    """ 
+    # Order
+    if order == 1:  # velocity
+        coeffs = np.array([-1, 1])
+    elif order == 2:  # acceleration
+        coeffs = np.array([1, -2, 1])
+    elif order == 3:  # jerk
+        coeffs = np.array([-1, 3, -3, 1])
+    else:
+        raise ValueError("Order must be 1, 2, or 3.")
+
+    # Fill-in matrix
+    mat = np.zeros((n, n))
+    for i in range(n - order):
+        for j, c in enumerate(coeffs):
+            mat[i, i + j] = c
+    return mat / (dt ** order)
+
+def get_A_vel_acc_jerk(n=100,dt=1e-2):
+    """
+        Get matrices to compute velocities, accelerations, and jerks
+    """
+    A_vel  = finite_difference_matrix(n,dt,order=1)
+    A_acc  = finite_difference_matrix(n,dt,order=2)
+    A_jerk = finite_difference_matrix(n,dt,order=3)
+    return A_vel,A_acc,A_jerk
+
+def optimization_based_smoothing_1d(
+        traj,
+        dt=0.1,
+        x_init=None,
+        x_final=None,
+        vel_limit=None,
+        acc_limit=None,
+        jerk_limit=None,
+        p_norm=2,
+    ):
+    """
+        1-D smoothing based on optimization
+    """
+    n = len(traj)
+    A_vel,A_acc,A_jerk = get_A_vel_acc_jerk(n=n,dt=dt)
+    # Convex optimization
+    x = cp.Variable(n)
+    objective = cp.Minimize(cp.norm(x-traj,p_norm))
+    # Boundary condition
+    A_list,b_list = [],[]
+    if x_init is not None:
+        A_list.append(np.eye(n,n)[0,:])
+        b_list.append(x_init)
+    if x_final is not None:
+        A_list.append(np.eye(n,n)[-1,:])
+        b_list.append(x_final)
+    # Velocity, acceleration, and jerk limits
+    C_list,d_list = [],[]
+    if vel_limit is not None:
+        C_list.append(A_vel)
+        C_list.append(-A_vel)
+        d_list.append(vel_limit*np.ones(n))
+        d_list.append(vel_limit*np.ones(n))
+    if acc_limit is not None:
+        C_list.append(A_acc)
+        C_list.append(-A_acc)
+        d_list.append(acc_limit*np.ones(n))
+        d_list.append(acc_limit*np.ones(n))
+    if jerk_limit is not None:
+        C_list.append(A_jerk)
+        C_list.append(-A_jerk)
+        d_list.append(jerk_limit*np.ones(n))
+        d_list.append(jerk_limit*np.ones(n))
+    constraints = []
+    if A_list:
+        A = np.vstack(A_list)
+        b = np.hstack(b_list).squeeze()
+        constraints.append(A @ x == b) 
+    if C_list:
+        C = np.vstack(C_list)
+        d = np.hstack(d_list).squeeze()
+        constraints.append(C @ x <= d)
+    prob = cp.Problem(objective, constraints)
+    prob.solve(solver=cp.CLARABEL)
+    traj_smt = x.value
+    return traj_smt
+
+def plot_traj_vel_acc_jerk(
+        t,traj,
+        traj_smt=None,figsize=(6,6),title='Trajectory',
+        ):
+    """ 
+        Plot trajectory, velocity, acceleration, and jerk
+    """
+    n  = len(t)
+    dt = t[1]-t[0]
+    # Compute velocity, acceleration, and jerk
+    A_vel,A_acc,A_jerk = get_A_vel_acc_jerk(n=n,dt=dt)
+    vel  = A_vel @ traj
+    acc  = A_acc @ traj
+    jerk = A_jerk @ traj
+    if traj_smt is not None:
+        vel_smt  = A_vel @ traj_smt
+        acc_smt  = A_acc @ traj_smt
+        jerk_smt = A_jerk @ traj_smt
+    # Plot
+    plt.figure(figsize=figsize)
+    plt.subplot(4, 1, 1)
+    plt.plot(t,traj,'o-',ms=1,color='k',lw=1/5,label='Trajectory')
+    if traj_smt is not None:
+        plt.plot(t,traj_smt,'o-',ms=1,color='r',lw=1/5,label='Smoothed Trajectory')
+    plt.legend(fontsize=8,loc='upper right')
+    plt.subplot(4, 1, 2)
+    plt.plot(t,vel,'o-',ms=1,color='k',lw=1/5,label='Velocity')
+    if traj_smt is not None:
+        plt.plot(t,vel_smt,'o-',ms=1,color='r',lw=1/5,label='Smoothed Velocity')
+    plt.legend(fontsize=8,loc='upper right')
+    plt.subplot(4, 1, 3)
+    plt.plot(t,acc,'o-',ms=1,color='k',lw=1/5,label='Acceleration')
+    if traj_smt is not None:
+        plt.plot(t,acc_smt,'o-',ms=1,color='r',lw=1/5,label='Smoothed Acceleration')
+    plt.legend(fontsize=8,loc='upper right')
+    plt.subplot(4, 1, 4)
+    plt.plot(t,jerk,'o-',ms=1,color='k',lw=1/5,label='Jerk')
+    if traj_smt is not None:
+        plt.plot(t,jerk_smt,'o-',ms=1,color='r',lw=1/5,label='Smoothed Jerk')
+    plt.legend(fontsize=8,loc='upper right')
+    plt.suptitle(title,fontsize=10)
+    plt.subplots_adjust(hspace=0.2,top=0.95)
+    plt.show()
+
+def get_vel_from_traj(traj,dt):
+    """ 
+        Get velocities from trajectory
+    """
+    L = traj.shape[0]
+    vel = np.zeros(L)
+    for tick in range(L-1):
+        vel[tick] = np.linalg.norm(traj[tick+1,:]-traj[tick,:])/dt
+    vel[-1] = vel[-2] # last two velocities to be the same
+    return vel
+
+def get_consecutive_subarrays(array,min_element=1):
+    """ 
+        Get consecutive sub arrays from an array
+    """
+    split_points = np.where(np.diff(array) != 1)[0] + 1
+    subarrays = np.split(array,split_points)    
+    return [subarray for subarray in subarrays if len(subarray) >= min_element]
+
+class PID_ControllerClass(object):
+    def __init__(self,
+                 name      = 'PID',
+                 k_p       = 0.01,
+                 k_i       = 0.0,
+                 k_d       = 0.001,
+                 dt        = 0.01,
+                 dim       = 1,
+                 dt_min    = 1e-6,
+                 out_min   = -np.inf,
+                 out_max   = np.inf,
+                 ANTIWU    = True,   # anti-windup
+                 out_alpha = 0.0    # output EMA (0: no EMA)
+                ):
+        """
+            Initialize PID Controller
+        """
+        self.name      = name
+        self.k_p       = k_p
+        self.k_i       = k_i
+        self.k_d       = k_d
+        self.dt        = dt
+        self.dim       = dim
+        self.dt_min    = dt_min
+        self.out_min   = out_min
+        self.out_max   = out_max
+        self.ANTIWU    = ANTIWU
+        self.out_alpha = out_alpha
+        # Buffers
+        self.cnt      = 0
+        self.x_trgt   = np.zeros(shape=self.dim)
+        self.x_curr   = np.zeros(shape=self.dim)
+        self.out_val  = np.zeros(shape=self.dim)
+        self.out_val_prev = np.zeros(shape=self.dim)
+        self.t_curr   = 0.0
+        self.t_prev   = 0.0
+        self.err_curr = np.zeros(shape=self.dim)
+        self.err_intg = np.zeros(shape=self.dim)
+        self.err_prev = np.zeros(shape=self.dim)
+        self.p_term   = np.zeros(shape=self.dim)
+        self.d_term   = np.zeros(shape=self.dim)
+        self.err_out  = np.zeros(shape=self.dim)
+        
+    def reset(self,t_curr=0.0):
+        """
+            Reset PID Controller
+        """
+        self.cnt      = 0
+        self.x_trgt   = np.zeros(shape=self.dim)
+        self.x_curr   = np.zeros(shape=self.dim)
+        self.out_val  = np.zeros(shape=self.dim)
+        self.out_val_prev = np.zeros(shape=self.dim)
+        self.t_curr   = t_curr
+        self.t_prev   = t_curr
+        self.err_curr = np.zeros(shape=self.dim)
+        self.err_intg = np.zeros(shape=self.dim)
+        self.err_prev = np.zeros(shape=self.dim)
+        self.p_term   = np.zeros(shape=self.dim)
+        self.d_term   = np.zeros(shape=self.dim)
+        self.err_out  = np.zeros(shape=self.dim)
+        
+    def update(
+        self,
+        t_curr  = None,
+        x_trgt  = None,
+        x_curr  = None,
+        VERBOSE = False
+        ):
+        """
+            Update PID controller
+            u(t) = K_p e(t) + K_i int e(t) {dt} + K_d {de}/{dt}
+        """
+        if x_trgt is not None:
+            self.x_trgt  = x_trgt
+        if t_curr is not None:
+            self.t_curr  = t_curr
+        if x_curr is not None:
+            self.x_curr  = x_curr
+            # PID controller updates here
+            self.dt       = max(self.t_curr - self.t_prev,self.dt_min)
+            self.err_curr = self.x_trgt - self.x_curr     
+            self.err_intg = self.err_intg + (self.err_curr*self.dt)
+            self.err_diff = self.err_curr - self.err_prev
+            
+            if self.ANTIWU: # anti-windup
+                self.err_out = self.err_curr * self.out_val
+                self.err_intg[self.err_out<0.0] = 0.0
+            
+            if self.dt > self.dt_min:
+                self.p_term   = self.k_p * self.err_curr
+                self.i_term   = self.k_i * self.err_intg
+                self.d_term   = self.k_d * self.err_diff / self.dt
+                self.out_val  = np.clip(
+                    a     = self.p_term + self.i_term + self.d_term,
+                    a_min = self.out_min,
+                    a_max = self.out_max)
+                # Smooth the output control value using EMA
+                self.out_val = self.out_alpha*self.out_val_prev + \
+                    (1.0-self.out_alpha)*self.out_val
+                self.out_val_prev = self.out_val
+
+                if VERBOSE:
+                    print ("cnt:[%d] t_curr:[%.5f] dt:[%.5f]"%
+                           (self.cnt,self.t_curr,self.dt))
+                    print (" x_trgt:   %s"%(self.x_trgt))
+                    print (" x_curr:   %s"%(self.x_curr))
+                    print (" err_curr: %s"%(self.err_curr))
+                    print (" err_intg: %s"%(self.err_intg))
+                    print (" p_term:   %s"%(self.p_term))
+                    print (" i_term:   %s"%(self.i_term))
+                    print (" d_term:   %s"%(self.d_term))
+                    print (" out_val:  %s"%(self.out_val))
+                    print (" err_out:  %s"%(self.err_out))
+            # Backup
+            self.t_prev   = self.t_curr
+            self.err_prev = self.err_curr
+        # Counter
+        if (t_curr is not None) and (x_curr is not None):
+            self.cnt = self.cnt + 1
+            
+    def out(self):
+        """
+            Get control output
+        """
+        return self.out_val
