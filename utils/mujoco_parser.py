@@ -1,7 +1,9 @@
-import cv2,os,mujoco,mujoco_viewer
+import cv2,os,mujoco,mujoco_viewer,time
 import numpy as np
 from util import (compute_view_params, get_rotation_matrix_from_two_points,
-                  meters2xyz, pr2t, r2w, rpy2r, trim_scale, r2quat)
+                  meters2xyz, pr2t, r2w, rpy2r, trim_scale, r2quat,
+                  t2p,t2r,get_colors,get_idxs,
+                  )
 
 class MuJoCoParserClass(object):
     """
@@ -28,6 +30,9 @@ class MuJoCoParserClass(object):
         self.qpos0 = self.data.qpos
         # Reset
         self.reset()
+        # Time
+        self.init_sim_time  = self.data.time
+        self.init_wall_time = time.time()
         # Print
         if self.VERBOSE:
             self.print_info()
@@ -82,6 +87,7 @@ class MuJoCoParserClass(object):
             self.ctrl_joint_names.append(self.joint_names[transmission_idx[0]])
             self.ctrl_joint_mins.append(self.joint_ranges[transmission_idx[0],0])
             self.ctrl_joint_maxs.append(self.joint_ranges[transmission_idx[0],1])
+            
         self.ctrl_qpos_idxs = self.ctrl_joint_idxs
         self.ctrl_qvel_idxs = []
         for ctrl_idx in range(self.n_ctrl):
@@ -98,7 +104,6 @@ class MuJoCoParserClass(object):
         self.site_names       = [mujoco.mj_id2name(self.model,mujoco.mjtObj.mjOBJ_SITE,x)
                                 for x in range(self.n_site)]
 
-
     def print_info(self):
         """
             Printout model information
@@ -112,7 +117,13 @@ class MuJoCoParserClass(object):
         print ("n_joint:[%d]"%(self.n_joint))
         print ("joint_names:%s"%(self.joint_names))
         print ("joint_types:%s"%(self.joint_types))
-        print ("joint_ranges:\n%s"%(self.joint_ranges))
+        
+        # Print joint range
+        # print ("joint_ranges:\n%s"%(self.joint_ranges))
+        for (joint_name,joint_range) in zip(self.joint_names,self.joint_ranges):
+            print ("[%s] range: [%.3f]deg~[%.3f]deg"%
+                   (joint_name,np.degrees(joint_range[0]),np.degrees(joint_range[1])))
+
         print ("n_rev_joint:[%d]"%(self.n_rev_joint))
         print ("rev_joint_idxs:%s"%(self.rev_joint_idxs))
         print ("rev_joint_names:%s"%(self.rev_joint_names))
@@ -130,8 +141,6 @@ class MuJoCoParserClass(object):
         print ("ctrl_joint_idxs:%s"%(self.ctrl_joint_idxs))
         print ("ctrl_joint_names:%s"%(self.ctrl_joint_names))
         print ("ctrl_qvel_idxs:%s"%(self.ctrl_qvel_idxs))
-        print ("ctrl_joint_mins:%s"%(self.ctrl_joint_mins))
-        print ("ctrl_joint_maxs:%s"%(self.ctrl_joint_maxs))
         print ("ctrl_ranges:\n%s"%(self.ctrl_ranges))
         print ("n_sensor:[%d]"%(self.n_sensor))
         print ("sensor_names:%s"%(self.sensor_names))
@@ -276,12 +285,74 @@ class MuJoCoParserClass(object):
         if INCREASE_TICK:
             self.tick = self.tick + 1
 
+    def get_state(
+            self,
+        ):
+        """ 
+            Get MuJoCo state
+        """
+        state = {
+            'qpos':self.data.qpos,
+            'qvel':self.data.qvel,
+            'qacc':self.data.qacc,
+            'act':self.data.act,
+            'ctrl':self.data.ctrl,
+        }
+        return state
+    
+    def set_state(
+            self,
+            qpos = None,
+            qvel = None,
+            qacc = None,
+            act  = None, # used for simulating tendons and muscles
+            ctrl = None,
+        ):
+        """ 
+            Set MuJoCo state
+        """
+        if qpos is not None: self.data.qpos = qpos
+        if qvel is not None: self.data.qvel = qvel
+        if qacc is not None: self.data.qacc = qacc
+        if act is not None: self.data.act = act
+        if ctrl is not None: self.data.ctrl = ctrl
 
-    def get_sim_time(self):
+
+    def set_init_sim_time(self,init_sim_time=None):
+        """
+            Initialize simulation time (sec)
+        """
+        if init_sim_time:
+            self.init_sim_time = init_sim_time
+        else:
+            self.init_sim_time = self.data.time
+    
+    def set_init_wall_time(self,init_wall_time=None):
+        """ 
+            Initialize wall clock time
+        """
+        if init_wall_time:
+            self.init_wall_time = init_wall_time
+        else:
+            self.init_wall_time = time.time()
+    
+    def get_sim_time(self,init_flag=False):
         """
             Get simulation time (sec)
         """
-        return self.data.time
+        if init_flag:
+            self.init_sim_time = self.data.time
+        elapsed_time = self.data.time - self.init_sim_time
+        return elapsed_time
+    
+    def get_wall_time(self,init_flag=False):
+        """ 
+            Get wall clock time
+        """
+        if init_flag:
+            self.init_wall_time = time.time()
+        elapsed_time = time.time() - self.init_wall_time # second
+        return elapsed_time
 
     def render(self,render_every=1):
         """
@@ -438,12 +509,26 @@ class MuJoCoParserClass(object):
         J_full = np.array(np.vstack([J_p,J_R]))
         return J_p,J_R,J_full
 
-    def get_ik_ingredients(self,body_name,p_trgt=None,R_trgt=None,IK_P=True,IK_R=True):
+    def get_ik_ingredients(
+            self,
+            body_name=None,
+            geom_name=None,
+            p_trgt=None,
+            R_trgt=None,
+            IK_P=True,
+            IK_R=True
+        ):
         """
             Get IK ingredients
         """
-        J_p,J_R,J_full = self.get_J_body(body_name=body_name)
-        p_curr,R_curr = self.get_pR_body(body_name=body_name)
+        if body_name is not None:
+            J_p,J_R,J_full = self.get_J_body(body_name=body_name)
+            p_curr,R_curr = self.get_pR_body(body_name=body_name)
+        if geom_name is not None:
+            J_p,J_R,J_full = self.get_J_geom(geom_name=geom_name)
+            p_curr,R_curr = self.get_pR_geom(geom_name=geom_name)
+        if (body_name is not None) and (geom_name is not None):
+            print ("[get_ik_ingredients] body_name:[%s] geom_name:[%s] are both not None!"%(body_name,geom_name))
         if (IK_P and IK_R):
             p_err = (p_trgt-p_curr)
             R_err = np.linalg.solve(R_curr,R_trgt)
@@ -777,19 +862,104 @@ class MuJoCoParserClass(object):
             label = label
         )
         
-    def plot_joint_axis(self,axis_len=0.1,axis_r=0.01):
+    def plot_joint_axis(self,axis_len=0.1,axis_r=0.01,joint_names=None):
         """ 
-            Plot revolute joint 
+            Plot revolute joint axis 
         """
-        for rev_joint_idx,rev_joint_name in zip(self.rev_joint_idxs,self.rev_joint_names):
-            axis_joint = self.model.jnt_axis[rev_joint_idx]
-            p_joint,R_joint = self.get_pR_joint(joint_name=rev_joint_name)
-            axis_world = R_joint@axis_joint
-            axis_rgba = np.append(np.eye(3)[:,np.argmax(axis_joint)],0.2)
-            self.plot_arrow_fr2to(
-                p_fr=p_joint,p_to=p_joint+axis_len*axis_world,
-                r=axis_r,rgba=axis_rgba)
+        rev_joint_idxs  = self.rev_joint_idxs
+        rev_joint_names = self.rev_joint_names
 
+        if joint_names is not None:
+            idxs = get_idxs(self.rev_joint_names,joint_names)
+            rev_joint_idxs_to_use  = rev_joint_idxs[idxs]
+            rev_joint_names_to_use = [rev_joint_names[i] for i in idxs]
+        else:
+            rev_joint_idxs_to_use  = rev_joint_idxs
+            rev_joint_names_to_use = rev_joint_names
+
+        for rev_joint_idx,rev_joint_name in zip(rev_joint_idxs_to_use,rev_joint_names_to_use):
+            axis_joint      = self.model.jnt_axis[rev_joint_idx]
+            p_joint,R_joint = self.get_pR_joint(joint_name=rev_joint_name)
+            axis_world      = R_joint@axis_joint
+            axis_rgba       = np.append(np.eye(3)[:,np.argmax(axis_joint)],0.2)
+            self.plot_arrow_fr2to(
+                p_fr = p_joint,
+                p_to = p_joint+axis_len*axis_world,
+                r    = axis_r,
+                rgba = axis_rgba
+            )
+            
+    def plot_joint_info(
+        self,PLOT_AXIS=True,axis_len=0.05,axis_width=0.05):
+        """ 
+            Plot joint information
+        """
+        for joint_name in self.joint_names:
+            p_joint,R_joint = self.get_pR_joint(joint_name=joint_name)
+            self.plot_T(
+                p_joint,R_joint,
+                PLOT_AXIS=PLOT_AXIS,axis_len=axis_len,axis_width=axis_width,
+                label='%s'%(joint_name))
+            
+    def plot_body_info(
+        self,PLOT_AXIS=True,axis_len=0.05,axis_width=0.05,PLOT_BODY_NAME=True):
+        """
+            Plot body information
+        """
+        for body_name in self.body_names:
+            p_body,R_body = self.get_pR_body(body_name=body_name)
+            if PLOT_BODY_NAME:
+                label = '%s'%(body_name)
+            else:
+                label = ''
+            self.plot_T(
+                p_body,R_body,
+                PLOT_AXIS=PLOT_AXIS,axis_len=axis_len,axis_width=axis_width,
+                label=label)
+            
+    def plot_joi(
+        self,T_joi,
+        PLOT_AXIS=True,axis_len=0.05,axis_width=0.01,
+        PLOT_SPHERE=False,sphere_r=0.0075,sphere_rgba=[1,0,0,0.25],
+        PLOT_NAME=True,
+        ):
+        """ 
+            Plot joints of interest (JOI) 
+        """
+        for key in T_joi.keys():
+            if PLOT_NAME:
+                label = key
+            else:
+                label = ''
+            self.plot_T(
+                p=t2p(T_joi[key]),R=t2r(T_joi[key]),
+                PLOT_AXIS=PLOT_AXIS,axis_len=axis_len,axis_width=axis_width,
+                PLOT_SPHERE=PLOT_SPHERE,sphere_r=sphere_r,sphere_rgba=sphere_rgba,
+                label=label, # '', key
+            )
+
+    def plot_traj(
+        self,
+        traj,
+        rgba        = [1,0,0,1],
+        plot_line   = True,
+        plot_sphere = True,
+        sphere_r    = 0.01,
+        ):
+        """ 
+            Plot trajectory
+        """
+        L = traj.shape[0]
+        if plot_line:
+            for idx in range(L-1):
+                p_fr = traj[idx,:]
+                p_to = traj[idx+1,:]
+                self.plot_line_fr2to(p_fr=p_fr,p_to=p_to,rgba=rgba)
+        if plot_sphere:
+            for idx in range(L):
+                p = traj[idx,:]
+                self.plot_sphere(p=p,r=sphere_r,rgba=rgba)
+            
     def get_body_names(self,prefix='obj_'):
         """
             Get body names with prefix
@@ -847,7 +1017,7 @@ class MuJoCoParserClass(object):
                 body2s.append(contact_body2)
         return p_contacts,f_contacts,geom1s,geom2s,body1s,body2s
 
-    def plot_contact_info(self,must_include_prefix=None,h_arrow=0.3,rgba_arrow=[1,0,0,1],r_sphere=0.02,
+    def plot_contact_info(self,must_include_prefix=None,h_arrow=0.3,rgba_arrow=[1,0,0,1],
                           PRINT_CONTACT_BODY=False,PRINT_CONTACT_GEOM=False,VERBOSE=False):
         """
             Plot contact information
@@ -870,7 +1040,7 @@ class MuJoCoParserClass(object):
                 label = '[%s]-[%s]'%(geom1,geom2)
             else:
                 label = '' 
-            self.plot_sphere(p=p_contact,r=r_sphere,rgba=[1,0.2,0.2,1],label=label)
+            self.plot_sphere(p=p_contact,r=0.02,rgba=[1,0.2,0.2,1],label=label)
         # Print
         if VERBOSE:
             self.print_contact_info(must_include_prefix=must_include_prefix)
@@ -1013,7 +1183,7 @@ class MuJoCoParserClass(object):
         """
         if sensor_names is None:
             sensor_names = self.sensor_names
-        data = np.array([self.get_sensor_value(sensor_name) for sensor_name in self.sensor_names]).squeeze()
+        data = np.array([self.get_sensor_value(sensor_name) for sensor_name in sensor_names]).squeeze()
         return data.copy()
     
     def get_qpos_joint(self,joint_name):
@@ -1041,7 +1211,7 @@ class MuJoCoParserClass(object):
         """
         return np.array([self.get_qpos_joint(joint_name) for joint_name in joint_names]).squeeze()
     
-    def get_qvel_joint(self,joint_names):
+    def get_qvel_joints(self,joint_names):
         """
             Get multiple joint velocities from 'joint_names'
         """
@@ -1058,6 +1228,9 @@ class MuJoCoParserClass(object):
             Viewer resume
         """
         self.viewer._paused = False
+
+    def is_viewer_paused(self):
+        return self.viewer._paused
         
     def get_idxs_fwd(self,joint_names):
         """ 
@@ -1080,7 +1253,7 @@ class MuJoCoParserClass(object):
     def get_idxs_step(self,joint_names):
         """ 
             Get indices for using env.step()
-            idxs_stepExample)
+            Example)
             env.step(ctrl=q,ctrl_idxs=idxs_step) # <= HERE
         """
         return [self.ctrl_joint_names.index(jname) for jname in joint_names]
@@ -1110,19 +1283,356 @@ class MuJoCoParserClass(object):
         jntadr  = self.model.body(root_name).jntadr[0]
         qposadr = self.model.jnt_qposadr[jntadr]
         self.data.qpos[qposadr+3:qposadr+7] = r2quat(R)
-
-    def get_q_couple(self,q_raw,coupled_joint_idxs_list,coupled_joint_weights_list):
+        
+    def set_quat_root(self,root_name='torso',quat=np.array([0,0,0,0])):
+        """ 
+            Set the rotation of a root joint
+            FK must be called after
+        """
+        jntadr  = self.model.body(root_name).jntadr[0]
+        qposadr = self.model.jnt_qposadr[jntadr]
+        self.data.qpos[qposadr+3:qposadr+7] = quat
+        
+    def get_q_couple(
+        self,
+        q_raw,
+        coupled_joint_idxs_list    = None,
+        coupled_joint_names_list   = None,
+        coupled_joint_weights_list = None,
+        ):
         """ 
             Coupled joint positions
         """
         q_couple = q_raw.copy()
-        for i in range(len(coupled_joint_idxs_list)):
-            coupled_joint_idx = coupled_joint_idxs_list[i]
-            coupled_joint_weights = coupled_joint_weights_list[i]
-            joint_sum = 0
-            for j in range(len(coupled_joint_idx)):
-                joint_sum += q_raw[coupled_joint_idx[j]]
-            joint_sum /= np.sum(coupled_joint_weights)
-            for k in range(len(coupled_joint_idx)):
-                q_couple[coupled_joint_idx[k]] = joint_sum*coupled_joint_weights[k]
+        if coupled_joint_idxs_list is not None:
+            for i in range(len(coupled_joint_idxs_list)): # for each couple
+                coupled_joint_idxs    = coupled_joint_idxs_list[i]
+                coupled_joint_weights = coupled_joint_weights_list[i]
+                joint_sum = 0
+                for j in range(len(coupled_joint_idxs)):
+                    joint_sum += q_raw[coupled_joint_idxs[j]]
+                joint_sum /= np.sum(coupled_joint_weights)
+                for k in range(len(coupled_joint_idxs)):
+                    q_couple[coupled_joint_idxs[k]] = joint_sum*coupled_joint_weights[k] # distribute coupled joint positions
+        if coupled_joint_names_list is not None:
+            for i in range(len(coupled_joint_names_list)): # for each couple
+                coupled_joint_names   = coupled_joint_names_list[i]
+                coupled_joint_idxs    = get_idxs(self.joint_names,coupled_joint_names)
+                coupled_joint_weights = coupled_joint_weights_list[i]
+                joint_sum = 0
+                for j in range(len(coupled_joint_idxs)):
+                    joint_sum += q_raw[coupled_joint_idxs[j]]
+                joint_sum /= np.sum(coupled_joint_weights)
+                for k in range(len(coupled_joint_idxs)):
+                    q_couple[coupled_joint_idxs[k]] = joint_sum*coupled_joint_weights[k] # distribute coupled joint positions
         return q_couple
+    
+    def set_geom_color(self,rgba=[0.75,0.95,0.15,1.0],body_names_to_color=None,body_names_to_exclude=['world']):
+        """
+            Set body color
+        """
+        if body_names_to_color is None:
+            body_names_to_color = self.body_names
+        for body_name in body_names_to_color: # for all bodies
+            if body_name in body_names_to_exclude: 
+                continue 
+            body_idx = self.body_names.index(body_name)
+            geom_idxs = [idx for idx,val in enumerate(self.model.geom_bodyid) if val==body_idx]
+            for geom_idx in geom_idxs: # for geoms attached to the body
+                self.model.geom(geom_idx).rgba = rgba
+    
+def get_joi_body_name_of_common_rig_hand():
+    """
+        Get the body name of JOI
+    """
+    joi_body_name = {
+        'torso':'torso',
+        'spine':'spine',
+        'rs':'right_shoulder',
+        're':'right_elbow',
+        'rw':'right_wrist',
+        'ls':'left_shoulder',
+        'le':'left_elbow',
+        'lw':'left_wrist',
+        'rp':'right_pelvis',
+        'rk':'right_knee',
+        'ra':'right_ankle',
+        'lp':'left_pelvis',
+        'lk':'left_knee',
+        'la':'left_ankle',
+    }
+    return joi_body_name
+
+def init_ik_info():
+    """
+        Initialize IK information
+    """
+    ik_info = {
+        'body_names':[],
+        'geom_names':[],
+        'p_trgts':[],
+        'R_trgts':[],
+        'n_trgt':0,
+    }
+    return ik_info
+
+def add_ik_info(
+        ik_info,
+        body_name=None,
+        geom_name=None,
+        p_trgt=None,
+        R_trgt=None
+    ):
+    """ 
+        Add IK information
+    """
+    ik_info['body_names'].append(body_name)
+    ik_info['geom_names'].append(geom_name)
+    ik_info['p_trgts'].append(p_trgt)
+    ik_info['R_trgts'].append(R_trgt)
+    ik_info['n_trgt'] = ik_info['n_trgt'] + 1
+
+def get_dq_from_augmented_jacobian_method(
+        env,ik_info,
+        stepsize=1,eps=1e-2,th=np.radians(1.0),
+        joint_idxs_jac=None,
+    ):
+    """
+        Get delta q from augmented Jacobian method
+    """
+    J_list,ik_err_list = [],[]
+    for ik_idx,(ik_body_name,ik_geom_name) in enumerate(zip(ik_info['body_names'],ik_info['geom_names'])):
+        ik_p_trgt = ik_info['p_trgts'][ik_idx]
+        ik_R_trgt = ik_info['R_trgts'][ik_idx]
+        IK_P = ik_p_trgt is not None
+        IK_R = ik_R_trgt is not None
+        J,ik_err = env.get_ik_ingredients(
+            body_name=ik_body_name,
+            geom_name=ik_geom_name,
+            p_trgt=ik_p_trgt,
+            R_trgt=ik_R_trgt,
+            IK_P=IK_P,
+            IK_R=IK_R
+        )
+        J_list.append(J)
+        ik_err_list.append(ik_err)
+
+    J_stack      = np.vstack(J_list)
+    ik_err_stack = np.hstack(ik_err_list)
+
+    # Select Jacobian columns that are within the joints to use
+    if joint_idxs_jac is not None:
+        J_stack_backup = J_stack.copy()
+        J_stack = np.zeros_like(J_stack)
+        J_stack[:,joint_idxs_jac] = J_stack_backup[:,joint_idxs_jac]
+
+    # Compute dq from damped least square
+    dq = env.damped_ls(J_stack,ik_err_stack,stepsize=stepsize,eps=eps,th=th)
+    return dq,ik_err_stack
+
+def plot_ik_info(
+        env,ik_info,
+        axis_len=0.05,axis_width=0.005,
+        sphere_r=0.01
+        ):
+    """
+        Plot IK information
+    """
+    colors = get_colors(cmap_name='gist_rainbow',n_color=ik_info['n_trgt'])
+    for ik_idx,(ik_body_name,ik_geom_name) in enumerate(zip(ik_info['body_names'],ik_info['geom_names'])):
+        color = colors[ik_idx]
+        ik_p_trgt = ik_info['p_trgts'][ik_idx]
+        ik_R_trgt = ik_info['R_trgts'][ik_idx]
+        IK_P = ik_p_trgt is not None
+        IK_R = ik_R_trgt is not None
+
+        if ik_body_name is not None:
+            # Plot current 
+            env.plot_body_T(
+                body_name=ik_body_name,
+                PLOT_AXIS=IK_R,axis_len=axis_len,axis_width=axis_width,
+                PLOT_SPHERE=IK_P,sphere_r=sphere_r,sphere_rgba=color,
+                label='' # ''/ik_body_name
+            )
+            # Plot target
+            if IK_P:
+                env.plot_sphere(p=ik_p_trgt,r=sphere_r,rgba=color,label='') 
+                env.plot_line_fr2to(p_fr=env.get_p_body(body_name=ik_body_name),p_to=ik_p_trgt,rgba=color)
+            if IK_P and IK_R:
+                env.plot_T(p=ik_p_trgt,R=ik_R_trgt,PLOT_AXIS=True,axis_len=axis_len,axis_width=axis_width)
+            if not IK_P and IK_R:
+                p_curr = env.get_p_body(body_name=ik_body_name)
+                env.plot_T(p=p_curr,R=ik_R_trgt,PLOT_AXIS=True,axis_len=axis_len,axis_width=axis_width)
+            
+        if ik_geom_name is not None:
+            # Plot current 
+            env.plot_geom_T(
+                geom_name=ik_geom_name,
+                PLOT_AXIS=IK_R,axis_len=axis_len,axis_width=axis_width,
+                PLOT_SPHERE=IK_P,sphere_r=sphere_r,sphere_rgba=color,
+                label='' # ''/ik_geom_name
+            )
+            # Plot target
+            if IK_P:
+                env.plot_sphere(p=ik_p_trgt,r=sphere_r,rgba=color,label='') 
+                env.plot_line_fr2to(p_fr=env.get_p_geom(geom_name=ik_geom_name),p_to=ik_p_trgt,rgba=color)
+            if IK_P and IK_R:
+                env.plot_T(p=ik_p_trgt,R=ik_R_trgt,PLOT_AXIS=True,axis_len=axis_len,axis_width=axis_width)
+            if not IK_P and IK_R:
+                p_curr = env.get_p_geom(geom_name=ik_geom_name)
+                env.plot_T(p=p_curr,R=ik_R_trgt,PLOT_AXIS=True,axis_len=axis_len,axis_width=axis_width)
+    
+def get_T_joi_from_common_rig_hand(env):
+    """ 
+        Get joints of interest of common-rig-hand model
+    """
+    
+    p_rs,R_rs = env.get_pR_body(body_name='right_shoulder')
+    p_re,R_re = env.get_pR_body(body_name='right_elbow')
+    p_rw,R_rw = env.get_pR_body(body_name='right_wrist')
+    
+    p_ls,R_ls = env.get_pR_body(body_name='left_shoulder')
+    p_le,R_le = env.get_pR_body(body_name='left_elbow')
+    p_lw,R_lw = env.get_pR_body(body_name='left_wrist')
+    
+    p_rc,_ = env.get_pR_body(body_name='right_clavicle')
+    p_lc,_ = env.get_pR_body(body_name='left_clavicle')
+
+    # p_neck,R_neck = env.get_pR_body(body_name='neck') # location of the neck body is problematic
+    # p_neck = 0.5 * (p_rs+p_ls)
+    p_neck = 0.5 * (p_rc+p_lc)
+    
+    p_rp,R_rp = env.get_pR_body(body_name='right_pelvis')
+    p_rk,R_rk = env.get_pR_body(body_name='right_knee')
+    p_ra,R_ra = env.get_pR_body(body_name='right_ankle')
+    
+    p_lp,R_lp = env.get_pR_body(body_name='left_pelvis')
+    p_lk,R_lk = env.get_pR_body(body_name='left_knee')
+    p_la,R_la = env.get_pR_body(body_name='left_ankle')
+    
+    # Right hand
+    p_r_thumb_cmc = env.get_p_body(body_name='rthumb_l1')
+    p_r_thumb_mcp = env.get_p_body(body_name='rthumb_l2')
+    p_r_thumb_dip = env.get_p_body(body_name='rthumb_l3')
+    p_r_thumb_end = env.get_p_body(body_name='rthumb_end')
+
+    p_r_index_cmc = env.get_p_body(body_name='rindex_l0')
+    p_r_index_mcp = env.get_p_body(body_name='rindex_l1')
+    p_r_index_pip = env.get_p_body(body_name='rindex_l2')
+    p_r_index_dip = env.get_p_body(body_name='rindex_l3')
+    p_r_index_end = env.get_p_body(body_name='rindex_end')
+
+    p_r_middle_cmc = env.get_p_body(body_name='rmiddle_l0')
+    p_r_middle_mcp = env.get_p_body(body_name='rmiddle_l1')
+    p_r_middle_pip = env.get_p_body(body_name='rmiddle_l2')
+    p_r_middle_dip = env.get_p_body(body_name='rmiddle_l3')
+    p_r_middle_end = env.get_p_body(body_name='rmiddle_end')
+
+    p_r_ring_cmc = env.get_p_body(body_name='rring_l0')
+    p_r_ring_mcp = env.get_p_body(body_name='rring_l1')
+    p_r_ring_pip = env.get_p_body(body_name='rring_l2')
+    p_r_ring_dip = env.get_p_body(body_name='rring_l3')
+    p_r_ring_end = env.get_p_body(body_name='rring_end')
+
+    p_r_pinky_cmc = env.get_p_body(body_name='rpinky_l0')
+    p_r_pinky_mcp = env.get_p_body(body_name='rpinky_l1')
+    p_r_pinky_pip = env.get_p_body(body_name='rpinky_l2')
+    p_r_pinky_dip = env.get_p_body(body_name='rpinky_l3')
+    p_r_pinky_end = env.get_p_body(body_name='rpinky_end')
+
+    # Left hand
+    p_l_thumb_cmc = env.get_p_body(body_name='lthumb_l1')
+    p_l_thumb_mcp = env.get_p_body(body_name='lthumb_l2')
+    p_l_thumb_dip = env.get_p_body(body_name='lthumb_l3')
+    p_l_thumb_end = env.get_p_body(body_name='lthumb_end')
+
+    p_l_index_cmc = env.get_p_body(body_name='lindex_l0')
+    p_l_index_mcp = env.get_p_body(body_name='lindex_l1')
+    p_l_index_pip = env.get_p_body(body_name='lindex_l2')
+    p_l_index_dip = env.get_p_body(body_name='lindex_l3')
+    p_l_index_end = env.get_p_body(body_name='lindex_end')
+
+    p_l_middle_cmc = env.get_p_body(body_name='lmiddle_l0')
+    p_l_middle_mcp = env.get_p_body(body_name='lmiddle_l1')
+    p_l_middle_pip = env.get_p_body(body_name='lmiddle_l2')
+    p_l_middle_dip = env.get_p_body(body_name='lmiddle_l3')
+    p_l_middle_end = env.get_p_body(body_name='lmiddle_end')
+
+    p_l_ring_cmc = env.get_p_body(body_name='lring_l0')
+    p_l_ring_mcp = env.get_p_body(body_name='lring_l1')
+    p_l_ring_pip = env.get_p_body(body_name='lring_l2')
+    p_l_ring_dip = env.get_p_body(body_name='lring_l3')
+    p_l_ring_end = env.get_p_body(body_name='lring_end')
+
+    p_l_pinky_cmc = env.get_p_body(body_name='lpinky_l0')
+    p_l_pinky_mcp = env.get_p_body(body_name='lpinky_l1')
+    p_l_pinky_pip = env.get_p_body(body_name='lpinky_l2')
+    p_l_pinky_dip = env.get_p_body(body_name='lpinky_l3')
+    p_l_pinky_end = env.get_p_body(body_name='lpinky_end')
+
+    T_joi = {
+        'hip': pr2t(env.get_p_body(body_name='base'),env.get_R_body(body_name='base')),
+        'spine': pr2t(env.get_p_body(body_name='spine'),env.get_R_body(body_name='spine')),
+        'neck': pr2t(p_neck,np.eye(3,3)),
+        'rs': pr2t(p_rs,R_rs),
+        're': pr2t(p_re,R_re),
+        'rw': pr2t(p_rw,R_rw),
+        'ls': pr2t(p_ls,R_ls),
+        'le': pr2t(p_le,R_le),
+        'lw': pr2t(p_lw,R_lw),
+        'rp': pr2t(p_rp,R_rp),
+        'rk': pr2t(p_rk,R_rk),
+        'ra': pr2t(p_ra,R_ra),
+        'lp': pr2t(p_lp,R_lp),
+        'lk': pr2t(p_lk,R_lk),
+        'la': pr2t(p_la,R_la),
+        'r_thumb_cmc':pr2t(p_r_thumb_cmc,np.eye(3,3)),
+        'r_thumb_mcp':pr2t(p_r_thumb_mcp,np.eye(3,3)),
+        'r_thumb_dip':pr2t(p_r_thumb_dip,np.eye(3,3)),
+        'r_thumb_end':pr2t(p_r_thumb_end,np.eye(3,3)),
+        'r_index_cmc':pr2t(p_r_index_cmc,np.eye(3,3)),
+        'r_index_mcp':pr2t(p_r_index_mcp,np.eye(3,3)),
+        'r_index_pip':pr2t(p_r_index_pip,np.eye(3,3)),
+        'r_index_dip':pr2t(p_r_index_dip,np.eye(3,3)),
+        'r_index_end':pr2t(p_r_index_end,np.eye(3,3)),
+        'r_middle_cmc':pr2t(p_r_middle_cmc,np.eye(3,3)),
+        'r_middle_mcp':pr2t(p_r_middle_mcp,np.eye(3,3)),
+        'r_middle_pip':pr2t(p_r_middle_pip,np.eye(3,3)),
+        'r_middle_dip':pr2t(p_r_middle_dip,np.eye(3,3)),
+        'r_middle_end':pr2t(p_r_middle_end,np.eye(3,3)),
+        'r_ring_cmc':pr2t(p_r_ring_cmc,np.eye(3,3)),
+        'r_ring_mcp':pr2t(p_r_ring_mcp,np.eye(3,3)),
+        'r_ring_pip':pr2t(p_r_ring_pip,np.eye(3,3)),
+        'r_ring_dip':pr2t(p_r_ring_dip,np.eye(3,3)),
+        'r_ring_end':pr2t(p_r_ring_end,np.eye(3,3)),
+        'r_pinky_cmc':pr2t(p_r_pinky_cmc,np.eye(3,3)),
+        'r_pinky_mcp':pr2t(p_r_pinky_mcp,np.eye(3,3)),
+        'r_pinky_pip':pr2t(p_r_pinky_pip,np.eye(3,3)),
+        'r_pinky_dip':pr2t(p_r_pinky_dip,np.eye(3,3)),
+        'r_pinky_end':pr2t(p_r_pinky_end,np.eye(3,3)),
+        'l_thumb_cmc':pr2t(p_l_thumb_cmc,np.eye(3,3)),
+        'l_thumb_mcp':pr2t(p_l_thumb_mcp,np.eye(3,3)),
+        'l_thumb_dip':pr2t(p_l_thumb_dip,np.eye(3,3)),
+        'l_thumb_end':pr2t(p_l_thumb_end,np.eye(3,3)),
+        'l_index_cmc':pr2t(p_l_index_cmc,np.eye(3,3)),
+        'l_index_mcp':pr2t(p_l_index_mcp,np.eye(3,3)),
+        'l_index_pip':pr2t(p_l_index_pip,np.eye(3,3)),
+        'l_index_dip':pr2t(p_l_index_dip,np.eye(3,3)),
+        'l_index_end':pr2t(p_l_index_end,np.eye(3,3)),
+        'l_middle_cmc':pr2t(p_l_middle_cmc,np.eye(3,3)),
+        'l_middle_mcp':pr2t(p_l_middle_mcp,np.eye(3,3)),
+        'l_middle_pip':pr2t(p_l_middle_pip,np.eye(3,3)),
+        'l_middle_dip':pr2t(p_l_middle_dip,np.eye(3,3)),
+        'l_middle_end':pr2t(p_l_middle_end,np.eye(3,3)),
+        'l_ring_cmc':pr2t(p_l_ring_cmc,np.eye(3,3)),
+        'l_ring_mcp':pr2t(p_l_ring_mcp,np.eye(3,3)),
+        'l_ring_pip':pr2t(p_l_ring_pip,np.eye(3,3)),
+        'l_ring_dip':pr2t(p_l_ring_dip,np.eye(3,3)),
+        'l_ring_end':pr2t(p_l_ring_end,np.eye(3,3)),
+        'l_pinky_cmc':pr2t(p_l_pinky_cmc,np.eye(3,3)),
+        'l_pinky_mcp':pr2t(p_l_pinky_mcp,np.eye(3,3)),
+        'l_pinky_pip':pr2t(p_l_pinky_pip,np.eye(3,3)),
+        'l_pinky_dip':pr2t(p_l_pinky_dip,np.eye(3,3)),
+        'l_pinky_end':pr2t(p_l_pinky_end,np.eye(3,3)),
+    }
+    return T_joi
