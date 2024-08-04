@@ -117,7 +117,7 @@
                                             <geom name="lwrist2lindex0" type="capsule" fromto="0 0 0 0.011069 0.052936 -0.005513"  size="0.006" />
                                             <geom name="lwrist2lmiddle0" type="capsule" fromto="0 0 0 -0.001014 0.056910 -0.003942"  size="0.006" />
                                             <geom name="lwrist2lpinky0" type="capsule" fromto="0 0 0 -0.022191 0.043901 -0.007416"  size="0.006" />
-                                            <geom name="lwrist2lring0" type="capsule" fromto="0 0 0 -0.013294 0.050768 -0.004992"  size="0.006" />
+                                            f<geom name="lwrist2lring0" type="capsule" fromto="0 0 0 -0.013294 0.050768 -0.004992"  size="0.006" />
                                             <geom name="lwrist2lthumb1" type="capsule" fromto="0 0 0 0.028838 0.042275 -0.023086"  size="0.006" />
                                             
                                             <joint name="l_wrist1" type="hinge" pos="0 0 0" axis="0 1 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
@@ -203,19 +203,19 @@
 
                                             <body name="left_thumb1" pos="0.028838 0.042275 -0.023086" euler="0 0 0">
                                                 <geom name="lthumb1-lthumb2" type="capsule" fromto="0 0 0 0.025959 0.018387 0.003174"  size="0.006" />
-                                                <joint name="l_thumbr" type="hinge" pos="0 0 0" axis="0 0 1" range="-0.523597 0.523597" damping="5" stiffness="0" armature="0.02" />
                                                 <joint name="l_thumba" type="hinge" pos="0 0 0" axis="0 1 0" range="0 1.570796" damping="5" stiffness="0" armature="0.02" />
+                                                    <joint name="l_thumbr" type="hinge" pos="0 0 0" axis="0 0 1" range="-0.523597 0.523597" damping="5" stiffness="0" armature="0.02" />
+                                                                                                            
+                                                    <body name="left_thumb2" pos="0.025959 0.018387 0.003174" euler="0 0 -0.954515">
+                                                        <geom name="lthumb2-lthumb3" type="capsule" fromto="0 0 0 -0.009025 0.025780 -0.002574"  size="0.006" />
+                                                        <joint name="l_thumb2" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
                                                                                                         
-                                                <body name="left_thumb2" pos="0.025959 0.018387 0.003174" euler="0 0 -0.954515">
-                                                    <geom name="lthumb2-lthumb3" type="capsule" fromto="0 0 0 -0.009025 0.025780 -0.002574"  size="0.006" />
-                                                    <joint name="l_thumb2" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
-                                                                                                    
-                                                    <body name="left_thumb3" pos="-0.009025 0.025780 -0.002574" euler="0 0 0.336747">
-                                                        <geom name="lthumb3-lthumbtip" type="capsule" fromto="0 0 0 -0.009 0.025 -0.0025"  size="0.006" />
-                                                        <joint name="l_thumb3" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
-                                                        <body name="left_thumb4" pos="-0.009 0.025 -0.0025" euler="0 0 0"/>
+                                                        <body name="left_thumb3" pos="-0.009025 0.025780 -0.002574" euler="0 0 0.336747">
+                                                            <geom name="lthumb3-lthumbtip" type="capsule" fromto="0 0 0 -0.009 0.025 -0.0025"  size="0.006" />
+                                                            <joint name="l_thumb3" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
+                                                            <body name="left_thumb4" pos="-0.009 0.025 -0.0025" euler="0 0 0"/>
+                                                        </body>
                                                     </body>
-                                                </body>
                                             </body>
                                         </body>
                                     </body>
@@ -331,19 +331,19 @@
 
                                             <body name="right_thumb1" pos="0.032093 -0.039326 -0.022098" euler="0 0 0">
                                                 <geom name="rthumb1-rthumb2" type="capsule" fromto="0 0 0 0.026988 -0.017556 0.001146"  size="0.006" />
-                                                <joint name="r_thumbr" type="hinge" pos="0 0 0" axis="0 0 1" range="-0.523597 0.523597" damping="5" stiffness="0" armature="0.02" />
                                                 <joint name="r_thumba" type="hinge" pos="0 0 0" axis="0 1 0" range="0 1.570796" damping="5" stiffness="0" armature="0.02" />
-                                                    
-                                                <body name="right_thumb2" pos="0.026988 -0.017556 0.001146" euler="0 0 0.994062">
-                                                    <geom name="rthumb2-rthumb3" type="capsule" fromto="0 0 0 -0.009379 -0.025674 -0.004803"  size="0.006" />
-                                                    <joint name="r_thumb2" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
-                                                    
-                                                    <body name="right_thumb3" pos="-0.009379 -0.025674 -0.004803" euler="0 0 -0.350253">
-                                                        <geom name="rthumb3-rthumbtip" type="capsule" fromto="0 0 0 -0.0093 -0.025 -0.0048"  size="0.006" />
-                                                        <joint name="r_thumb3" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
-                                                        <body name="right_thumb4" pos="-0.0093 -0.025 -0.0048" euler="0 0 0"/>
+                                                    <joint name="r_thumbr" type="hinge" pos="0 0 0" axis="0 0 1" range="-0.523597 0.523597" damping="5" stiffness="0" armature="0.02" />
+                                                        
+                                                    <body name="right_thumb2" pos="0.026988 -0.017556 0.001146" euler="0 0 0.994062">
+                                                        <geom name="rthumb2-rthumb3" type="capsule" fromto="0 0 0 -0.009379 -0.025674 -0.004803"  size="0.006" />
+                                                        <joint name="r_thumb2" type="hinge" pos="0 0 0" axis="1 0 0" range="0 1.831667" damping="5" stiffness="0" armature="0.02" />
+                                                        
+                                                        <body name="right_thumb3" pos="-0.009379 -0.025674 -0.004803" euler="0 0 -0.350253">
+                                                            <geom name="rthumb3-rthumbtip" type="capsule" fromto="0 0 0 -0.0093 -0.025 -0.0048"  size="0.006" />
+                                                            <joint name="r_thumb3" type="hinge" pos="0 0 0" axis="1 0 0" range="-1.831667 0" damping="5" stiffness="0" armature="0.02" />
+                                                            <body name="right_thumb4" pos="-0.0093 -0.025 -0.0048" euler="0 0 0"/>
+                                                        </body>
                                                     </body>
-                                                </body>
                                             </body>
                                         </body>
                                     </body>
@@ -481,8 +481,8 @@
         <motor name="r_ring3"       gear="20" joint="r_ring3" /> -->
         <motor name="r_thumbr"       gear="20" joint="r_thumbr" />
         <motor name="r_thumba"       gear="20" joint="r_thumba" />
-        <!-- <motor name="r_thumb2"       gear="20" joint="r_thumb2" />
-        <motor name="r_thumb3"       gear="20" joint="r_thumb3" /> -->
+        <motor name="r_thumb2"       gear="20" joint="r_thumb2" />
+        <!-- <motor name="r_thumb3"       gear="20" joint="r_thumb3" /> -->
 
         <motor name="l_hip1"       gear="40" joint="l_hip1" />
         <motor name="l_hip2"       gear="40" joint="l_hip2" />
