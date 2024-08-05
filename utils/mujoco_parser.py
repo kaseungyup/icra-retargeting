@@ -1430,6 +1430,47 @@ def get_dq_from_augmented_jacobian_method(
     dq = env.damped_ls(J_stack,ik_err_stack,stepsize=stepsize,eps=eps,th=th)
     return dq,ik_err_stack
 
+def get_dq_from_ik_info(
+        env,
+        ik_info,
+        stepsize       = 1,
+        eps            = 1e-2,
+        th             = np.radians(1.0),
+        joint_idxs_jac = None,
+    ):
+    """
+        Get delta q from augmented Jacobian method
+    """
+    J_list,ik_err_list = [],[]
+    for ik_idx,(ik_body_name,ik_geom_name) in enumerate(zip(ik_info['body_names'],ik_info['geom_names'])):
+        ik_p_trgt = ik_info['p_trgts'][ik_idx]
+        ik_R_trgt = ik_info['R_trgts'][ik_idx]
+        IK_P = ik_p_trgt is not None
+        IK_R = ik_R_trgt is not None
+        J,ik_err = env.get_ik_ingredients(
+            body_name = ik_body_name,
+            geom_name = ik_geom_name,
+            p_trgt    = ik_p_trgt,
+            R_trgt    = ik_R_trgt,
+            IK_P      = IK_P,
+            IK_R      = IK_R,
+        )
+        J_list.append(J)
+        ik_err_list.append(ik_err)
+
+    J_stack      = np.vstack(J_list)
+    ik_err_stack = np.hstack(ik_err_list)
+
+    # Select Jacobian columns that are within the joints to use
+    if joint_idxs_jac is not None:
+        J_stack_backup = J_stack.copy()
+        J_stack = np.zeros_like(J_stack)
+        J_stack[:,joint_idxs_jac] = J_stack_backup[:,joint_idxs_jac]
+
+    # Compute dq from damped least square
+    dq = env.damped_ls(J_stack,ik_err_stack,stepsize=stepsize,eps=eps,th=th)
+    return dq,ik_err_stack
+
 def plot_ik_info(
         env,ik_info,
         axis_len=0.05,axis_width=0.005,
