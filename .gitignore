@@ -161,8 +161,7 @@ cython_debug/
 
 data
 video
-smplh_models
-smplx_models
+models
 *MUJOCO_LOG.TXT
 *DS_Store
 asset/kimlab_dualarms
