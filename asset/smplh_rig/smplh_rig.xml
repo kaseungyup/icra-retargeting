@@ -120,9 +120,9 @@
                                             f<geom name="lwrist2lring0" type="capsule" fromto="0 0 0 -0.013294 0.050768 -0.004992"  size="0.006" />
                                             <geom name="lwrist2lthumb1" type="capsule" fromto="0 0 0 0.028838 0.042275 -0.023086"  size="0.006" />
                                             
-                                            <joint name="l_wrist1" type="hinge" pos="0 0 0" axis="0 1 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                            <joint name="l_wrist2" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                            <joint name="l_wrist3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
+                                            <joint name="l_wrist1" type="hinge" pos="0 0 0" axis="0 1 0" range="-1.570796 1.570796" damping="5" stiffness="0" armature="0.02" />
+                                            <joint name="l_wrist2" type="hinge" pos="0 0 0" axis="0 0 1" range="-0.785398 0.785398" damping="5" stiffness="0" armature="0.02" />
+                                            <joint name="l_wrist3" type="hinge" pos="0 0 0" axis="1 0 0" range="-0.785398 0.785398" damping="5" stiffness="0" armature="0.02" />
 
                                             <body name="left_index0" pos="0.011069 0.052936 -0.005513" euler="0 0 0">
                                                 <geom name="lindex0-lindex1" type="capsule" fromto="0 0 0 0.011069 0.052936 -0.005513"  size="0.006" />
@@ -245,9 +245,9 @@
                                             <geom name="rwrist2rring0" type="capsule" fromto="0 0 0 -0.012381 -0.050571 -0.003757"  size="0.006" />
                                             <geom name="rwrist2rthumb1" type="capsule" fromto="0 0 0 0.032093 -0.039326 -0.022098"  size="0.006" />
 
-                                            <joint name="r_wrist1" type="hinge" pos="0 0 0" axis="0 1 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                            <joint name="r_wrist2" type="hinge" pos="0 0 0" axis="0 0 1" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
-                                            <joint name="r_wrist3" type="hinge" pos="0 0 0" axis="1 0 0" range="-3.141592 3.141592" damping="5" stiffness="0" armature="0.02" />
+                                            <joint name="r_wrist1" type="hinge" pos="0 0 0" axis="0 1 0" range="-1.570796 1.570796" damping="5" stiffness="0" armature="0.02" />
+                                            <joint name="r_wrist2" type="hinge" pos="0 0 0" axis="0 0 1" range="-0.785398 0.785398" damping="5" stiffness="0" armature="0.02" />
+                                            <joint name="r_wrist3" type="hinge" pos="0 0 0" axis="1 0 0" range="-0.785398 0.785398" damping="5" stiffness="0" armature="0.02" />
                                             
                                             <body name="right_index0" pos="0.013122 -0.052049 -0.004405" euler="0 0 0">
                                                 <geom name="rindex0-rindex1" type="capsule" fromto="0 0 0 0.013122 -0.052049 -0.004405"  size="0.006" />
