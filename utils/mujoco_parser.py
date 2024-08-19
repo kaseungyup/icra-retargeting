@@ -1018,7 +1018,7 @@ class MuJoCoParserClass(object):
         return p_contacts,f_contacts,geom1s,geom2s,body1s,body2s
 
     def plot_contact_info(self,must_include_prefix=None,h_arrow=0.3,rgba_arrow=[1,0,0,1],
-                          PRINT_CONTACT_BODY=False,PRINT_CONTACT_GEOM=False,VERBOSE=False):
+                          PRINT_CONTACT_BODY=False,PRINT_CONTACT_GEOM=False,PLOT_SPHERE=True,VERBOSE=False):
         """
             Plot contact information
         """
@@ -1040,7 +1040,10 @@ class MuJoCoParserClass(object):
                 label = '[%s]-[%s]'%(geom1,geom2)
             else:
                 label = '' 
-            self.plot_sphere(p=p_contact,r=0.02,rgba=[1,0.2,0.2,1],label=label)
+            if PLOT_SPHERE:
+                self.plot_sphere(p=p_contact,r=0.02,rgba=[1,0.2,0.2,1],label=label)
+            else:
+                self.plot_sphere(p=p_contact,r=0.02,rgba=[1,0.2,0.2,0],label=label)
         # Print
         if VERBOSE:
             self.print_contact_info(must_include_prefix=must_include_prefix)
