@@ -959,6 +959,29 @@ class MuJoCoParserClass(object):
             for idx in range(L):
                 p = traj[idx,:]
                 self.plot_sphere(p=p,r=sphere_r,rgba=rgba)
+
+    def plot_traj_thick(
+        self,
+        traj,
+        rgba        = [1,0,0,1],
+        plot_line   = True,
+        line_r      = 0.01,
+        plot_sphere = True,
+        sphere_r    = 0.01,
+        ):
+        """ 
+            Plot trajectory
+        """
+        L = traj.shape[0]
+        if plot_line:
+            for idx in range(L-1):
+                p_fr = traj[idx,:]
+                p_to = traj[idx+1,:]
+                self.plot_cylinder_fr2to(p_fr=p_fr,p_to=p_to,r=line_r,rgba=rgba)
+        if plot_sphere:
+            for idx in range(L):
+                p = traj[idx,:]
+                self.plot_sphere(p=p,r=sphere_r,rgba=rgba)
             
     def get_body_names(self,prefix='obj_'):
         """
